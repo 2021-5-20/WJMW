@@ -1,0 +1,88 @@
+name: wujiang-mawang
+
+services:
+  database:
+    image: postgres:18-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mawang
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set the database administrator password}
+      MAWANG_DB_PASSWORD: ${MAWANG_DB_PASSWORD:?Set the application database password}
+    command: ["postgres", "-c", "archive_mode=on", "-c", "archive_command=sh /ops/archive-wal.sh %p %f", "-c", "archive_timeout=60s"]
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./ops:/ops:ro
+      - ./ops/init-db.sh:/docker-entrypoint-initdb.d/10-mawang.sh:ro
+      - ${MAWANG_BACKUP_DIR:?Set an independent backup mount}:/backup
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d mawang"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backup:
+    image: postgres:18-bookworm
+    user: postgres
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+      game:
+        condition: service_healthy
+    environment:
+      PGHOST: database
+      PGUSER: postgres
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    entrypoint: ["sh", "-ec", "while true; do sh /ops/basebackup.sh; sleep 86400; done"]
+    healthcheck:
+      test: ["CMD-SHELL", "test -n \"$$(find /backup/base -mindepth 1 -maxdepth 1 -type d ! -name '*.partial' -mmin -1800 -print -quit)\""]
+      interval: 10m
+      timeout: 10s
+      start_period: 30m
+      retries: 2
+    volumes:
+      - ./ops:/ops:ro
+      - ${MAWANG_BACKUP_DIR}:/backup
+
+  game:
+    image: wujiang-mawang:${MAWANG_RELEASE:-local}
+    build: .
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      PGHOST: database
+      PGDATABASE: mawang
+      PGUSER: mawang_app
+      PGPASSWORD: ${MAWANG_DB_PASSWORD}
+      APP_ORIGIN: https://${MAWANG_DOMAIN}
+      SMTP_URL: ${SMTP_URL:?Set SMTP_URL for account mail}
+      MAIL_FROM: ${MAIL_FROM:?Set MAIL_FROM for account mail}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:2567/health/ready').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      game:
+        condition: service_healthy
+    environment:
+      MAWANG_DOMAIN: ${MAWANG_DOMAIN:?Set MAWANG_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

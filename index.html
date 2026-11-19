@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#10292c" />
+    <link rel="icon" href="/mawang-icon.png" type="image/png" />
+    <title>吴江麻王 · 好友牌桌</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wordmark"><span class="logo-tile" aria-hidden="true">中</span>吴江麻王</div>
+      <div class="navigation">
+        <button class="quiet-button" id="account-open">我的资料</button>
+        <button class="quiet-button" id="history-open">战绩</button>
+        <button class="quiet-button" type="button" data-command="rules">玩法说明</button>
+        <button class="quiet-button" type="button" data-command="leave" hidden>离开房间</button>
+      </div>
+    </header>
+    <main>
+      <section class="lobby" id="lobby" aria-labelledby="lobby-title">
+        <div class="lobby-content">
+          <div class="lobby-title-block">
+            <h1 id="lobby-title">吴江<span>麻王</span></h1>
+            <p class="room-tag">四人好友房</p>
+          </div>
+          <button id="resume" class="primary-button" hidden></button>
+          <form id="room-form" class="entry-form">
+            <label for="nickname">你的昵称</label>
+            <input id="nickname" name="nickname" maxlength="12" autocomplete="nickname" placeholder="输入昵称" required />
+            <button class="primary-button" id="create-room" formnovalidate type="submit" value="create">创建房间<span aria-hidden="true">↗</span></button>
+            <div class="form-divider"><span>已有邀请码</span></div>
+            <label class="sr-only" for="room-code">房间号</label>
+            <div class="join-field"><input id="room-code" name="room-code" maxlength="256" autocomplete="off" aria-label="房间号" placeholder="输入房间号" /><button class="secondary-button" id="join-room" type="submit" value="join">加入</button></div>
+          </form>
+          <p id="lobby-status" class="lobby-status" aria-live="polite"></p>
+        </div>
+        <figure class="lobby-art" aria-hidden="true">
+          <picture>
+            <source srcset="/lantern-teahouse.webp" type="image/webp" />
+            <img class="art-image" src="/tea-house.png" alt="" fetchpriority="high" />
+          </picture>
+        </figure>
+      </section>
+      <section class="game-shell" id="game-shell" hidden aria-label="好友房">
+        <div class="room-toolbar">
+          <div class="room-heading"><span>好友房</span><strong id="room-number"></strong></div>
+          <div class="room-controls"><span id="connection-status" role="status"></span><button class="quiet-button" type="button" data-command="invite">复制邀请</button></div>
+        </div>
+        <section class="waiting" id="waiting" hidden aria-labelledby="waiting-title">
+          <h1 id="waiting-title">牌友入座</h1>
+          <p id="waiting-status" aria-live="polite"></p>
+          <div id="waiting-seats" class="waiting-seats"></div>
+          <button type="button" class="primary-button" id="start-round" data-command="start" disabled>开始对局</button>
+        </section>
+        <section class="playing" id="playing" hidden aria-label="麻将牌桌">
+          <div class="rotate-hint"><span aria-hidden="true">⤾</span><p>请将手机横过来打牌</p></div>
+          <div class="table-fit"><div id="table-stage" aria-label="牌桌"></div></div>
+          <div class="decision-bar">
+            <div class="turn-info" aria-live="polite"><strong id="turn-status"></strong><span id="countdown"></span></div>
+            <div class="action-list" id="action-list" aria-label="可用操作"></div>
+          </div>
+        </section>
+        <section class="settlement" id="settlement" hidden aria-labelledby="settlement-title">
+          <div class="settlement-heading"><div><p id="settlement-round"></p><h1 id="settlement-title"></h1></div><div id="settlement-total" class="settlement-total"></div></div>
+          <div id="winning-hand" class="winning-hand"></div>
+          <div id="score-lines" class="score-lines"></div>
+          <div id="final-scores" class="final-scores"></div>
+          <button type="button" class="primary-button" id="ready-round" data-command="ready">准备下一局</button>
+        </section>
+      </section>
+    </main>
+    <dialog id="rules-dialog" class="rules-dialog">
+      <form method="dialog"><button type="submit" aria-label="关闭玩法说明" class="quiet-button close-dialog">×</button></form>
+      <h2 id="rules-title">吴江麻将玩法</h2>
+      <ul id="rules-list"></ul>
+    </dialog>
+    <dialog id="account-dialog" class="rules-dialog" aria-labelledby="account-title">
+      <form method="dialog"><button class="quiet-button close-dialog" aria-label="关闭">×</button></form>
+      <h2 id="account-title">我的资料</h2>
+      <p id="identity" hidden></p>
+      <div id="account-mode" class="account-modes" role="group" aria-label="账号操作"></div>
+      <form id="account-form" class="entry-form" hidden>
+        <label>昵称<input name="name" maxlength="12" autocomplete="nickname"></label>
+        <label>头像<span class="profile-portrait" aria-hidden="true"></span><select name="avatar"></select></label>
+        <label>用户名<input name="username" maxlength="32" autocomplete="username"></label>
+        <label>密码<input name="password" type="password" maxlength="128"></label>
+        <label>邮箱<input name="email" type="email" maxlength="254" autocomplete="email"></label>
+        <button class="primary-button" type="submit">登录</button>
+      </form>
+      <p role="status" id="account-status"></p>
+    </dialog>
+    <dialog id="history-dialog" class="rules-dialog" aria-labelledby="history-title">
+      <form method="dialog"><button class="quiet-button close-dialog" aria-label="关闭">×</button></form>
+      <h2 id="history-title">我的战绩</h2>
+      <div id="history-list"></div>
+      <p id="history-status" role="status"></p>
+      <button id="history-more" class="secondary-button" hidden>查看更多战绩</button>
+      <button id="history-retry" class="secondary-button" hidden>重试</button>
+    </dialog>
+    <dialog id="leave-dialog" class="rules-dialog leave-dialog">
+      <h2>离开好友房？</h2><p id="leave-explanation">牌局进行中，离开后系统会在超时后替你出牌。</p>
+      <form method="dialog"><button class="secondary-button" value="cancel">继续留桌</button><button class="primary-button" value="leave">离开</button></form>
+    </dialog>
+    <div id="toast" class="toast" role="status" hidden></div>
+    <script type="module" src="/src/web/main.ts"></script>
+  </body>
+</html>

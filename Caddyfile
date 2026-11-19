@@ -1,0 +1,4 @@
+{$MAWANG_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy game:2567
+}
